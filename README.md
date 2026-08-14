@@ -17,7 +17,7 @@ Login to the [AWS Management Console](https://aws.amazon.com/console/)
 
 1. Open the IAM Console.
 2. Click *Policies* in the left sidebar, then click *Create policy*.
-3. Click Create and enter details/actions
+3. Click *Create* and enter details/actions
     ```json
     {
         "Version": "2012-10-17",
@@ -61,6 +61,8 @@ Login to the [AWS Management Console](https://aws.amazon.com/console/)
                     "ec2:DescribeVpcs",
                     "ec2:DescribeVpcAttribute",
                     "ec2:DescribeTags",
+                    "ec2:DisassociateAddress",
+                    "ec2:DisassociateRouteTable"
                     "ec2:ImportKeyPair",
                     "ec2:ReleaseAddress",
                     "ec2:RevokeSecurityGroupEgress",
@@ -122,5 +124,13 @@ to this new user. Next select *AWS accounts* and select the user to add the new 
 ### Create the IAM Policy for S3
 
 Repeat the steps above for making a role but name it *s3-rw-role*  with actions
-`s3:PutObject, GetObject, DeleteObject, CreateBucket, ListBucket`. This will be applied to
-the newly create instances by Terraform.
+`s3:PutObject, GetObject, ListBucket` as *s3-rw-policy* and add it to the role.
+This will be applied to the newly create instances by Terraform.
+
+For more control, you can limit the policy to an ARN \(Amazon Resource Names\). For S3:
+
+```text
+arn:aws:s3:::bucket-name
+arn:aws:s3:::bucket-name/*
+arn:aws:s3:::bucket-name/prefix/path
+```
