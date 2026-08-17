@@ -1,0 +1,17 @@
+---
+# Production inventory with SSH config support
+# This inventory works with ${ssh_cfg_file}
+all:
+  vars:
+    # Use SSH config file instead of individual SSH settings
+    ansible_ssh_common_args: '-F ${ssh_cfg_file} -C -o ControlMaster=auto -o ControlPersist=60s'
+  
+  children:
+    # Worker/Batch processing (Amazon Linux 2, ec2-user)
+    workers:
+      vars:
+        ansible_user: ${ansible_user}
+      hosts:
+        worker01:
+          # ansible_python_interpreter:
+        worker02:

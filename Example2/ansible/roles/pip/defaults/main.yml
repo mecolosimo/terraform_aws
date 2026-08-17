@@ -1,0 +1,5 @@
+---
+# Default variables for AWS CLI role
+awscli_version: latest
+awscli_user: "{{ ansible_user }}"
+

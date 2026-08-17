@@ -1,0 +1,55 @@
+---
+# Install AWS CLI on all known hosts
+# Usage: ansible-playbook -i inventory/production.yml playbooks/install-all.yml
+- name: Install AWS CLI on all hosts
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  pre_tasks:
+    - name: Validate inventory
+      assert:
+        that:
+          - inventory_hostname is defined
+        fail_msg: "Host {{ inventory_hostname }} not properly defined in inventory"
+      tags: always
+  
+  roles:
+    - awscli
+  
+  post_tasks:
+    - name: Test AWS CLI basic functionality
+      block:
+        - name: Run AWS CLI help
+          command: aws help
+          register: aws_help
+          changed_when: false
+          timeout: 10
+        
+        - name: List AWS CLI version
+          command: aws --version
+          register: aws_version_final
+          changed_when: false
+        
+        - name: Test AWS CLI configuration (if credentials available)
+          command: aws sts get-caller-identity
+          register: aws_identity
+          ignore_errors: yes
+          timeout: 10
+      tags: test
+    
+    - name: Installation summary
+      debug:
+        msg: |
+          ========================================
+          AWS CLI Installation Complete
+          ========================================
+          Host: {{ inventory_hostname }}
+          IP: {{ ansible_default_ipv4.address | default('N/A') }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          {{ aws_version_final.stdout }}
+          
+          AWS Credentials Configured: {{ not aws_identity.failed }}
+          AWS Account: {{ (aws_identity.stdout | from_json).Account | default('Not configured') }}
+          ========================================
+      tags: summary

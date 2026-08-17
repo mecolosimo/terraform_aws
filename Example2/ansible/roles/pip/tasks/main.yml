@@ -1,0 +1,12 @@
+- name: Ensure python3-pip is installed via system package manager
+  ansible.builtin.package:
+    name: python3-pip
+    state: present
+  become: true
+
+- name: Upgrade pip safely
+  ansible.builtin.command:
+    cmd: python3 -m pip install --upgrade pip --break-system-packages
+  register: pip_upgrade
+  changed_when: "'Successfully installed' in pip_upgrade.stdout"
+  become: true

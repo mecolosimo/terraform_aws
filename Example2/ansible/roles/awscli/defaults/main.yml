@@ -1,0 +1,15 @@
+---
+# Default variables for AWS CLI role
+awscli_version: latest
+awscli_user: "{{ ansible_user }}"
+awscli_pip_executable: pip3
+awscli_install_method: pip  # Options: pip, package
+
+# Additional AWS SDK packages
+install_boto3: true
+install_botocore: true
+
+# Configuration
+create_aws_config: true
+aws_region: "{{ aws_region }}"
+aws_output_format: json
