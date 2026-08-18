@@ -1,8 +1,0 @@
-aws_region = "Region vpc is in"
-
-vpc_id = "Your existing VPC ID"
-public_subnet_id = "The ID of the existing public subnet"
-private_subnet_cidr = "The CIDR address for private subnet"
-bastion_id = "The ID of the existing bastion/terraform host; e.g., ami-0xxxxxxxxx"
-bastion_instance_type = "Must match existing instance; e.g., t2.micro"
-bastion_sg = "The ID of the existing security group assigned to the bastion/terraform host"

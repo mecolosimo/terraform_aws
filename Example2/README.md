@@ -101,7 +101,7 @@ ssh -F ./local/ssh.cfg worker-00
 aws --version
 # aws-cli/2.33.15 Python/3.9.25 Linux/6.1.177-224.371.amzn2023.x86_64 source/x86_64.amzn.2023
 aws sts get-caller-identity
-aws s3 ls s3://minikeyvalue
+aws s3 ls s3://{{ bucket }}
 exit
 
 # Remove the bastion instance from Terraform state (it doesn't delete it from AWS)

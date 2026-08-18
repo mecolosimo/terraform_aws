@@ -4,7 +4,15 @@
     msg: "Installing AWS CLI on {{ inventory_hostname }} ({{ ansible_os_family }} - {{ ansible_distribution }})"
   tags: debug
 
-- name: Remove curl-minimal to avoid conflicts (Amazon Linux 2023)
+- name: Skippin Amazon Linux
+  debug:
+    msg: |
+      Skipping AWS CLI installation on {{ inventory_hostname }}
+      OS: {{ ansible_distribution }} ({{ ansible_os_family }})
+  tags: skip
+  when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
+
+- name: Remove curl-minimal to avoid conflicts (Amazon Linux)
   yum:
     name: curl-minimal
     state: absent
@@ -35,7 +43,7 @@
   when: ansible_os_family == "Debian"
   tags: dependencies
 
-- name: Install pip and dependencies (RedHat/CentOS/Amazon Linux)
+- name: Install pip and dependencies (RedHat distributions)
   yum:
     name:
       - python3-pip
@@ -51,6 +59,7 @@
     state: latest
     executable: "{{ awscli_pip_executable }}"
   tags: pip
+  when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon"
   register: pip_upgrade
 
 - name: Install AWS CLI via pip

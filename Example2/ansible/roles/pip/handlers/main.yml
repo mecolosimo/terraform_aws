@@ -1,5 +1,0 @@
----
-- name: verify aws cli
-  command: aws --version
-  register: aws_verify
-  listen: verify aws cli

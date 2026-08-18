@@ -31,6 +31,8 @@ resource "aws_instance" "workers" {
   
   ami = data.aws_ami.amazon_linux_2023.id
   instance_type = var.aws_instance_type
+
+  # Assign policies
   iam_instance_profile = aws_iam_instance_profile.worker_s3_profile.name
 
   subnet_id = aws_subnet.private_subnet_a.id
@@ -55,7 +57,4 @@ resource "aws_instance" "workers" {
   
   # Links the instance to the public SSH key created in ssh.tf
   key_name = aws_key_pair.cluster_key.key_name
-
-  # TODO: add s3 policy
-
 }
