@@ -4,33 +4,30 @@
     msg: "Installing AWS CLI on {{ inventory_hostname }} ({{ ansible_os_family }} - {{ ansible_distribution }})"
   tags: debug
 
-- name: Skippin Amazon Linux
-  debug:
-    msg: |
-      Skipping AWS CLI installation on {{ inventory_hostname }}
-      OS: {{ ansible_distribution }} ({{ ansible_os_family }})
-  tags: skip
-  when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
+- name: Amazon Linux
+  block:
+    - name: Skipping
+      ansible.builtin.debug:
+        msg: |
+          Skipping AWS CLI installation on {{ inventory_hostname }}
+          OS: {{ ansible_distribution }} ({{ ansible_os_family }})
+      tags: skip
+      when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
 
-- name: Remove curl-minimal to avoid conflicts (Amazon Linux)
-  yum:
-    name: curl-minimal
-    state: absent
+    - name: Remove curl-minimal to avoid conflicts (Amazon Linux)
+      ansible.builtin.yum:
+        name: curl-minimal
+        state: absent
+      ignore_errors: true
+      tags: dependencies
+
   when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
-  ignore_errors: yes
-  tags: dependencies
 
 - name: Update package cache (Debian/Ubuntu)
   apt:
-    update_cache: yes
+    update_cache: true
     cache_valid_time: 3600
   when: ansible_os_family == "Debian"
-  tags: packages
-
-- name: Update package cache (RedHat/CentOS/Amazon Linux)
-  yum:
-    update_cache: yes
-  when: ansible_os_family == "RedHat"
   tags: packages
 
 - name: Install pip and dependencies (Debian/Ubuntu)
@@ -43,24 +40,27 @@
   when: ansible_os_family == "Debian"
   tags: dependencies
 
-- name: Install pip and dependencies (RedHat distributions)
-  yum:
-    name:
-      - python3-pip
-      - python3-virtualenv
-      - curl
-    state: present
-  when: ansible_os_family == "RedHat"
-  tags: dependencies
+- name: RedHat distribution
+  block:
+  - name: Install pip and dependencies (RedHat distributions)
+    yum:
+      name:
+        - python3-pip
+        - python3-virtualenv
+        - curl
+      state: present
+    tags: dependencies
 
-- name: Upgrade pip to latest version
-  pip:
-    name: pip
-    state: latest
-    executable: "{{ awscli_pip_executable }}"
-  tags: pip
-  when: ansible_os_family == "RedHat" and ansible_distribution != "Amazon"
-  register: pip_upgrade
+  - name: Upgrade pip to latest version (not Amazon)
+    pip:
+      name: pip
+      state: latest
+      executable: "{{ awscli_pip_executable }}"
+    tags: pip
+    when: ansible_distribution != "Amazon"
+    register: pip_upgrade
+  
+  when: ansible_os_family == "RedHat"
 
 - name: Install AWS CLI via pip
   pip:
