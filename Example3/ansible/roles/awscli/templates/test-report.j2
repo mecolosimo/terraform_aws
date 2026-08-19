@@ -1,0 +1,78 @@
+================================================================================
+  AWS CLI Installation Test Report
+================================================================================
+  Generated: {{ ansible_date_time.iso8601 }}
+  Host: {{ inventory_hostname }}
+  IP: {{ ansible_default_ipv4.address | default('N/A') }}
+  OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+  Kernel: {{ ansible_kernel }}
+
+================================================================================
+  Version Information
+================================================================================
+  {{ test_version.stdout }}
+  
+  Boto Packages:
+  {% if boto_version.rc == 0 %}
+  {{ boto_version.stdout }}
+  {% else %}
+  No boto packages found
+  {% endif %}
+
+  {% if boto3_check.rc == 0 %}
+  {{ boto3_check.stdout }}
+  {% endif %}
+
+================================================================================
+  Test Results
+================================================================================
+  [{% if test_version.rc == 0 %}✓{% else %}✗{% endif %}] Version Check
+  [{% if test_help.rc == 0 %}✓{% else %}✗{% endif %}] Help Functionality
+  [{% if test_s3.rc == 0 %}✓{% else %}✗{% endif %}] S3 Module
+  [{% if test_ec2.rc == 0 %}✓{% else %}✗{% endif %}] EC2 Module
+  [{% if aws_config_stat.stat.exists %}✓{% else %}✗{% endif %}] Config Directory
+  [{% if aws_creds_stat.stat.exists %}✓{% else %}✗{% endif %}] Credentials File
+  [{% if aws_conf_stat.stat.exists %}✓{% else %}✗{% endif %}] Config File
+
+================================================================================
+  Configuration Status
+================================================================================
+  AWS Config Directory: {{ ansible_user_dir }}/.aws
+  {% if aws_config_stat.stat.exists %}
+  Size: {{ aws_config_stat.stat.size }} bytes
+  Mode: {{ aws_config_stat.stat.mode }}
+  Owner: {{ aws_config_stat.stat.pw_name }}
+  {% else %}
+  Not created yet
+  {% endif %}
+
+================================================================================
+  AWS Credentials Status
+================================================================================
+  {% if aws_identity.rc == 0 %}
+  AWS Access Configured: YES
+  Account: {{ (aws_identity.stdout | from_json).Account }}
+  User ARN: {{ (aws_identity.stdout | from_json).Arn }}
+  {% else %}
+  AWS Credentials: Not configured
+  (Run: aws configure to set up credentials)
+  {% endif %}
+
+================================================================================
+  Next Steps
+================================================================================
+  1. Configure AWS credentials:
+     aws configure
+     
+  2. Test S3 access:
+     aws s3 ls
+     
+  3. Test EC2 access:
+     aws ec2 describe-instances
+     
+  4. View all available commands:
+     aws help
+     
+  5. Documentation: https://docs.aws.amazon.com/cli/
+
+================================================================================

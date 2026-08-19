@@ -1,0 +1,120 @@
+# Expecting AML, but instaling AWS CLI on several Linuxs
+- name: Display host information
+  debug:
+    msg: "Installing AWS CLI on {{ inventory_hostname }} ({{ ansible_os_family }} - {{ ansible_distribution }})"
+  tags: debug
+
+- name: Amazon Linux
+  block:
+    - name: Skipping
+      ansible.builtin.debug:
+        msg: |
+          Skipping AWS CLI installation on {{ inventory_hostname }}
+          OS: {{ ansible_distribution }} ({{ ansible_os_family }})
+      tags: skip
+      when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
+
+    - name: Remove curl-minimal to avoid conflicts (Amazon Linux)
+      ansible.builtin.yum:
+        name: curl-minimal
+        state: absent
+      ignore_errors: true
+      tags: dependencies
+
+  when: ansible_os_family == "RedHat" and ansible_distribution == "Amazon"
+
+- name: Update package cache (Debian/Ubuntu)
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+  tags: packages
+
+- name: Install pip and dependencies (Debian/Ubuntu)
+  apt:
+    name:
+      - python3-pip
+      - python3-venv
+      - curl
+    state: present
+  when: ansible_os_family == "Debian"
+  tags: dependencies
+
+- name: RedHat distribution
+  block:
+  - name: Install pip and dependencies (RedHat distributions)
+    yum:
+      name:
+        - python3-pip
+        - python3-virtualenv
+        - curl
+      state: present
+    tags: dependencies
+
+  - name: Upgrade pip to latest version (not Amazon)
+    pip:
+      name: pip
+      state: latest
+      executable: "{{ awscli_pip_executable }}"
+    tags: pip
+    when: ansible_distribution != "Amazon"
+    register: pip_upgrade
+  
+  when: ansible_os_family == "RedHat"
+
+- name: Install AWS CLI via pip
+  pip:
+    name: awscli
+    state: "{{ awscli_version }}"
+    executable: "{{ awscli_pip_executable }}"
+  tags: awscli
+  register: awscli_install
+  notify: verify aws cli
+
+- name: Install boto3 and botocore
+  pip:
+    name:
+      - boto3
+      - botocore
+    state: latest
+    executable: "{{ awscli_pip_executable }}"
+  when: install_boto3 and install_botocore
+  tags: awscli
+
+- name: Verify AWS CLI installation
+  command: aws --version
+  register: aws_version
+  changed_when: false
+  tags: verify
+
+- name: Display AWS CLI version
+  debug:
+    msg: "{{ aws_version.stdout }}"
+  tags: verify
+
+- name: Get AWS CLI location
+  shell: which aws
+  register: aws_location
+  changed_when: false
+  tags: info
+
+- name: Create AWS CLI config directory
+  file:
+    path: "{{ ansible_user_dir }}/.aws"
+    state: directory
+    mode: '0700'
+    owner: "{{ awscli_user }}"
+    group: "{{ awscli_user }}"
+  when: create_aws_config
+  tags: config
+
+- name: Summary - AWS CLI installed
+  debug:
+    msg: |
+      ✓ AWS CLI successfully installed on {{ inventory_hostname }}
+      
+      Location: {{ aws_location.stdout }}
+      Version: {{ aws_version.stdout }}
+      Config directory: {{ ansible_user_dir }}/.aws
+      Python executable: {{ awscli_pip_executable }}
+  tags: summary
