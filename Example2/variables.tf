@@ -25,6 +25,13 @@ variable "private_subnet_cidr" {
   default = ""
 }
 
+# Can be overwritten in terraform.tfvars
+variable "num_workers" {
+  type        = number
+  description = "Number of worker instances"
+  default = 2
+}
+
 # ############
 # AWS settings
 # ############
@@ -52,4 +59,23 @@ variable "bastion_id" {
 # defined in terraform.tfvars
 variable  "bastion_instance_type" {
   default = ""
+}
+
+# defined in terraform.tfvars
+variable "tf_user" {
+  default = ""
+}
+
+# defined in terraform.tfvars
+variable "worker_s3_role" {
+    default = ""
+}
+
+# ################
+# Ansible settings
+# ################
+
+# Only have a production inventory, no stagging or development
+variable "inventory_file_tpl" {
+  default = "./ansible/inventory/production.yml.tftpl"
 }

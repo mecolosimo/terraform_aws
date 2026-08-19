@@ -7,6 +7,6 @@ resource "aws_instance" "bastion" {
   # Life cycle block prevents Terraform from accidentally destroying it
   lifecycle {
     ignore_changes = [ami, instance_type, user_data]
-    prevent_destroy = true
+    prevent_destroy = true    # We don't want to manage this
   }
 }

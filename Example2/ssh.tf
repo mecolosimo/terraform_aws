@@ -3,11 +3,10 @@
 locals {
   ssh_key_rsa = "${path.module}/local/pki/bastion.rsa" # private
   ssh_key_pub =  "${path.module}/local/pki/bastion.pub"
-  ssh_cfg_file = "${path.module}/local/ssh.cfg"
+  ssh_cfg_file = "${local.absolute_path}/local/ssh.cfg"   # used in Ansile scripts
 
   # connection details (mapped from instances)
   bastion_public_ip = aws_instance.bastion.public_ip
-  worker_ip = aws_instance.private_worker.private_ip
 }
 
 resource "tls_private_key" "ssh_key" {
@@ -40,21 +39,14 @@ resource "local_file" "ssh_config" {
   filename        = local.ssh_cfg_file
   file_permission = "0600" # Read/Write for owner only (required by SSH)
 
-  content = <<EOF
-
-# Global SSH Defaults
-Host *
-    IdentityFile ${local.ssh_key_rsa}
-    User ec2-user
-    StrictHostKeyChecking no
-    UserKnownHostsFile /dev/null
-
-Host worker
-    HostName ${aws_instance.private_worker.private_ip}
-EOF
+  content  = templatefile("${path.module}/ssh_cfg.tftpl", {
+      workers = local.workers,
+      ssh_key_rsa = abspath(local.ssh_key_rsa),
+      ansible_user = var.tf_user
+  })
 }
 
 output "ssh_connection_command" {
-  value       = "ssh -F ${local.ssh_cfg_file} worker"
-  description = "Run this exact command in your terminal to jump straight into your private instance!"
+  value       = "ssh -F ${local.ssh_cfg_file} worker-01"
+  description = "Run this command in your terminal to jump into your private worker-01!"
 }

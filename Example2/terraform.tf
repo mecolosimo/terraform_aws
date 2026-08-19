@@ -16,3 +16,7 @@ provider "aws" {
 data "aws_vpc" "selected" {
   id = var.vpc_id
 }
+
+locals {
+  absolute_path = abspath("${path.module}")
+}

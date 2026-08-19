@@ -1,0 +1,12 @@
+Host *
+    IdentityFile ${ssh_key_rsa}
+    User ${ansible_user}
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+
+%{ for hostname, instance in workers ~}
+
+Host ${hostname}
+    HostName ${instance.private_ip}
+
+%{ endfor ~}
