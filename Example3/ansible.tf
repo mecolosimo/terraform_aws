@@ -1,10 +1,11 @@
 # This sets up ansible under ./local/ansible/
 
 locals {
-  group_vars = "${path.module}/local/ansible/group_vars/all.yml"
   inventory_file = "${path.module}/local/ansible/inventory/production.yml"
+  group_vars = "${path.module}/local/ansible/inventory/group_vars/all.yml"
   playbook_file = "${path.module}/local/ansible/playbooks/site.yml"
   run_ansible = "${path.module}/local/ansible/run-ansible.sh"
+  run_adduser = "${path.module}/local/ansible/run-adduser.sh"
 
   inventory = {
     all = {
@@ -25,18 +26,19 @@ locals {
   }
 }
 
-resource "local_file" "group_vars" {
-  filename = local.group_vars
-
-  content  = templatefile("${path.module}/ansible/group_vars/all.yml.tftpl", {
-    aws_region = var.aws_region
-  })
-}
-
 # Only have one inventory file
 resource "local_file" "inventory" {
   filename = local.inventory_file
   content  = yamlencode(local.inventory)
+}
+
+# Put under inventory
+resource "local_file" "group_vars" {
+  filename = local.group_vars
+
+  content  = templatefile("${path.module}/ansible/inventory/group_vars/all.yml.tftpl", {
+    aws_region = var.aws_region
+  })
 }
 
 # Only have one playbook file
@@ -45,23 +47,33 @@ resource "null_resource" "copy_files_playbooks" {
   provisioner "local-exec" {
     command = <<-EOF
               mkdir -p ${path.module}/local/ansible/playbooks && \
-              cp ${path.module}/ansible/playbooks/production.yml ${path.module}/local/ansible/playbooks/production.yml
+              cp ${path.module}/ansible/playbooks/production.yml ${path.module}/local/ansible/playbooks/production.yml && \
+              cp ${path.module}/ansible/playbooks/adduser.yml ${path.module}/local/ansible/playbooks/adduser.yml
               EOF
   }
 }
 
-resource "null_resource" "copy_files_run_playbook" {
+resource "null_resource" "copy_file_run_ansible" {
   provisioner "local-exec" {
     command = <<-EOF
               cp ${path.module}/ansible/run-ansible.sh ${local.run_ansible} && \
-              chmod +x ${path.module}/ansible/run-ansible.sh ${local.run_ansible}
+              chmod +x ${local.run_ansible}
+              EOF
+  }
+}
+
+resource "null_resource" "copy_file_run_adduser" {
+  provisioner "local-exec" {
+    command = <<-EOF
+              cp ${path.module}/ansible/run-adduser.sh ${local.run_adduser} && \
+              chmod +x ${local.run_adduser}
               EOF
   }
 }
 
 resource "null_resource" "copy_files_roles" {
   provisioner "local-exec" {
-    command = "cp -r ${path.module}/ansible/roles ${path.module}/local/ansible/roles"
+    command = "cp -r ${path.module}/ansible/roles ${path.module}/local/ansible/"
   }
 }
 

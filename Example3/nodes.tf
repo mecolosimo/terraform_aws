@@ -1,4 +1,4 @@
-# Create Nodes for YARN NodeManager
+# Create Nodes (workers)
 
 locals {
   # Used in ssh.tf

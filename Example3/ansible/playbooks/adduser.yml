@@ -1,0 +1,12 @@
+- name: Orchestrate user lookup and server provisioning
+  hosts: nodes
+  become: true
+  vars:
+    # Default fallback username if none is supplied via CLI
+    playbook_user: "jdoe"
+
+  roles:
+    - role: user_discover
+    - role: user_provision
+    - role: user_ssh
+  

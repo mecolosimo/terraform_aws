@@ -4,6 +4,10 @@ resource "aws_instance" "bastion" {
   ami           = var.bastion_id
   instance_type = var.bastion_instance_type
 
+  tags = {
+    Name = "bastion"
+  }
+
   # Life cycle block prevents Terraform from accidentally destroying it
   lifecycle {
     ignore_changes = [ami, instance_type, user_data]

@@ -48,6 +48,6 @@ resource "local_file" "ssh_config" {
 }
 
 output "ssh_connection_command" {
-  value       = "ssh -F ${local.ssh_cfg_file} worker-01"
-  description = "Run this command in your terminal to jump into your private worker-01!"
+  value       = "ssh -F ${local.ssh_cfg_file} node-00001"
+  description = "Run this command in your terminal to jump into your private node-00001!"
 }

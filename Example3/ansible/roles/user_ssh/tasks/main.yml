@@ -1,0 +1,96 @@
+
+# ansible-galaxy collection list
+# ansible-galaxy collection install community.crypto ansible.posix
+# This role uses the playbook_user variable and the new_user_details fact (generate in user_provision)
+
+- name: Provision per-user ansible ssh key + config
+  become: true      # Instructs Ansible to log in as your regular user first, then immediately elevate privileges
+  block:
+    - name: Display information
+      ansible.builtin.debug:
+        msg: "Installing Ansible generated ssh on {{ inventory_hostname }} ({{ ansible_os_family }} - {{ ansible_distribution }})"
+      tags: debug
+
+    - name: Compute ssh paths
+      ansible.builtin.set_fact:
+        ssh_path: "{{ new_user_details.home }}/.ssh/ansible/"
+        ssh_id_path: "{{ new_user_details.home }}/.ssh/ansible/id_{{ ssh_key_algorithm }}"
+        master_ssh_cfg_file: "{{ playbook_dir }}/../../ssh.cfg"
+        user_ssh_cfg_file: "{{ new_user_details.home }}/.ssh/ansible/ssh.cfg"
+
+    - name: Create ssh_path with correct permissions on remote
+      ansible.builtin.file:
+        path: "{{ ssh_path }}"
+        state: directory
+        owner: "{{ new_user_details.name }}"
+        group: "{{ new_user_details.name }}"
+        mode: '0700'
+
+    - name: Get stats of a local ssh_path
+      ansible.builtin.stat:
+        path: "{{ ssh_path }}"
+      delegate_to: localhost
+      register: local_ssh_path
+
+    - name: Create local ssh_path with correct permissions on local
+      ansible.builtin.file:
+        path: "{{ ssh_path }}"
+        state: directory
+        owner: "{{ new_user_details.name }}"
+        group: "{{ new_user_details.name }}"
+        mode: '0700'
+      delegate_to: localhost
+      when: not local_ssh_path.stat.exists
+
+    - name: Generate new local SSH keys
+      community.crypto.openssh_keypair:
+        path: "{{ ssh_id_path }}"
+        type: "{{ ssh_key_algorithm }}"
+        owner: "{{ new_user_details.name }}"
+        group: "{{ new_user_details.name }}"
+        mode: '0600'
+      delegate_to: localhost
+      run_once: true
+      register: new_key
+
+    - name: Verify new local keys exist
+      ansible.builtin.stat:
+        path: "{{ ssh_id_path }}"
+      register: new_key_verify
+
+    - name: Append file authorized_keys on remote with new key, public part
+      ansible.posix.authorized_key:
+        user: "{{ new_user_details.name }}"
+        state: present
+        key: "{{ new_key.public_key }}"
+
+    - name: Copy local master ssh conf file to new user destination, locally
+      ansible.builtin.copy:
+        src: "{{ master_ssh_cfg_file }}"
+        dest: "{{ user_ssh_cfg_file }}"
+        owner: "{{ new_user_details.name }}"
+        group: "{{ new_user_details.name }}"
+        mode: '0600'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Replace identity file in the local file
+      ansible.builtin.replace:
+        path: "{{ user_ssh_cfg_file }}"
+        regexp: '^(\s*IdentityFile\s+).*$'
+        replace: '\1{{ new_key.filename }}'   # The absolute path to the generated private key
+      delegate_to: localhost
+      run_once: true
+
+    - name: Replace the user in the local file
+      ansible.builtin.replace:
+        path: "{{ user_ssh_cfg_file }}"
+        regexp: '^(\s*User\s+).*$'
+        replace: '\1{{ playbook_user }}'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Display ssh information
+      ansible.builtin.debug:
+        msg: "Run this command in your terminal to jump into your private node-00000, `ssh -F {{ user_ssh_cfg_file }} node-00000`"
+      tags: debug

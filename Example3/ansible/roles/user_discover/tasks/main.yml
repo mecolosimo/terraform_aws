@@ -1,0 +1,15 @@
+- name: Query system database for user details
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ playbook_user }}"
+  register: getent_result
+  ignore_errors: true
+
+- name: Expose discovered UID globally for subsequent roles
+  ansible.builtin.set_fact:
+    discovered_uid: "{{ getent_result.ansible_facts.getent_passwd[playbook_user][1] }}"
+  when: getent_result.ansible_facts.getent_passwd is defined and playbook_user in getent_result.ansible_facts.getent_passwd
+
+- name: Log discovery results
+  ansible.builtin.debug:
+    msg: "Discovered user '{{ playbook_user }}' has UID: {{ discovered_uid | default('NONE') }}"

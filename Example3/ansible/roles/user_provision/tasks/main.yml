@@ -1,0 +1,18 @@
+# This role uses the playbook_user variable and the discovered_uid fact (generate in user_discovery)
+
+- name: Provision user account with matching UID
+  ansible.builtin.user:
+    name: "{{ playbook_user }}"
+    uid: "{{ discovered_uid | default(omit) }}"
+    state: present
+    shell: /bin/bash
+    create_home: true
+  register: new_user_details
+
+- name: Create .ssh directory with secure permissions
+  ansible.builtin.file:
+    path: "{{ new_user_details.home }}/.ssh"
+    state: directory
+    owner: "{{ playbook_user }}"
+    group: "{{ playbook_user }}"
+    mode: '0700'

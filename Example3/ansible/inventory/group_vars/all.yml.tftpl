@@ -1,10 +1,12 @@
----
 # Global variables for all hosts
 common_packages:
   - curl
   - wget
   - git
   - htop
+
+# SSH
+ssh_key_algorithm: ed25519  # Algorithm for new key
 
 # AWS CLI settings
 awscli_version: latest
